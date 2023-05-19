@@ -146,7 +146,7 @@
     } else {
       buttonDiv.style.setProperty('color', '#2E2E30', 'important')
       buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important')
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important')
+      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important')
     }
   }
 
