@@ -7,8 +7,8 @@
 // @match        https://app.asana.com/*
 // @grant        none
 // @run-at       document-body
-// @downloadURL  https://gist.githubusercontent.com/jpbochi/f651698e371f7deda33d039ddaa2bda5/raw/asana-favicon-notification.js
-// @updateURL    https://gist.githubusercontent.com/jpbochi/f651698e371f7deda33d039ddaa2bda5/raw/asana-favicon-notification.js
+// @downloadURL  https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-favicon-notification.js
+// @updateURL    https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-favicon-notification.js
 // ==/UserScript==
 
 // initially forked from https://greasyfork.org/en/scripts/29414-asana-dynamic-favicon by Joe Thomas

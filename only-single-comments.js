@@ -6,8 +6,8 @@
 // @author       JP Bochi
 // @match        https://github.com/*/*/pull/*
 // @icon         https://www.google.com/s2/favicons?domain=github.com
-// @downloadURL  https://gist.githubusercontent.com/jpbochi/ac88177a0a4741300c2f24c4e33a9c90/raw/only-single-comments.js
-// @updateURL    https://gist.githubusercontent.com/jpbochi/ac88177a0a4741300c2f24c4e33a9c90/raw/only-single-comments.js
+// @downloadURL  https://raw.githubusercontent.com/duckduckgo/user-scripts/main/only-single-comments.js
+// @updateURL    https://raw.githubusercontent.com/duckduckgo/user-scripts/main/only-single-comments.js
 // @grant        none
 // ==/UserScript==
 

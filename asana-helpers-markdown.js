@@ -7,8 +7,8 @@
 // @version     1.2.3
 // @author      Nick Goossens, JP Bochi
 // @require     https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js
-// @downloadURL https://gist.githubusercontent.com/jpbochi/3a7d6717abddd5761e9ccec3bc3fd41f/raw/asana-helpers-markdown.js
-// @updateURL   https://gist.githubusercontent.com/jpbochi/3a7d6717abddd5761e9ccec3bc3fd41f/raw/asana-helpers-markdown.js
+// @downloadURL https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-helpers-markdown.js
+// @updateURL   https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-helpers-markdown.js
 // ==/UserScript==
 
 (function(){
