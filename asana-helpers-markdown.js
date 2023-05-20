@@ -11,7 +11,7 @@
 // @updateURL   https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-helpers-markdown.js
 // ==/UserScript==
 
-;(function () {
+(function () {
   'use strict'
 
   // Setup the UI
