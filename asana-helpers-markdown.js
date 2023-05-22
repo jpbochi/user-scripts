@@ -11,7 +11,7 @@
 // @updateURL   https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-helpers-markdown.js
 // ==/UserScript==
 
-(function () {
+;(function () {
   'use strict'
 
   // Setup the UI
@@ -130,10 +130,16 @@
 
   // Switch between dark and light themes
   function switchTheme() {
-    if (document.body.classList.contains('DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode', 'DesignTokenThemeSelectors-theme--systemDarkMode')
+    if (document.body.classList.contains('DesignTokenThemeSelectors-theme--darkMode')) {
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode')
+    } else if (document.body.classList.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--systemDarkMode')
     } else {
-      document.body.classList.add('DesignTokenThemeSelectors-theme--lightMode' ? 'DesignTokenThemeSelectors-theme--darkMode' : 'DesignTokenThemeSelectors-theme--systemDarkMode')
+      if (document.body.classList.contains('DesignTokenThemeSelectors-theme--lightMode')) {
+        document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode')
+      } else {
+        document.body.classList.add('DesignTokenThemeSelectors-theme--systemDarkMode')
+      }
     }
     updateButtonsTheme(buttonDiv)
   }
