@@ -16,6 +16,7 @@
 
   // Setup the UI
   let buttonDiv = null // Setting a default state, even if its null
+  const currentTheme = document.body.classList
 
   const button = (content, onClick) => {
     var btn = document.createElement('button')
@@ -130,22 +131,25 @@
 
   // Switch between dark and light themes
   function switchTheme() {
-    if (document.body.classList.contains('DesignTokenThemeSelectors-theme--darkMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode')
-    } else if (document.body.classList.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--systemDarkMode')
-    } else {
-      if (document.body.classList.contains('DesignTokenThemeSelectors-theme--lightMode')) {
-        document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode')
-      } else {
-        document.body.classList.add('DesignTokenThemeSelectors-theme--systemDarkMode')
-      }
-    }
     updateButtonsTheme(buttonDiv)
+
+    if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--systemDarkMode')
+      document.body.classList.add('DesignTokenThemeSelectors-theme--lightMode')
+    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemLightMode')) {
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--systemLightMode')
+      document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode')
+    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode')
+      document.body.classList.add('DesignTokenThemeSelectors-theme--lightMode')
+    } else {
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--lightMode')
+      document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode')
+    }
   }
 
   function updateButtonsTheme(buttonDiv) {
-    if (document.body.classList.contains('DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode')) {
+    if (currentTheme === 'DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode') {
       buttonDiv.style.setProperty('color', '#F5F4F3', 'important')
       buttonDiv.style.setProperty('background-color', '#2E2E30', 'important')
       buttonDiv.style.setProperty('border', '1px solid #565557', 'important')
