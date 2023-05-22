@@ -44,11 +44,10 @@
       fontSize: '14px',
     };
     buttonDiv = document.createElement('div');
-    setDefaultButtonsTheme(buttonDiv);
+    setButtonsTheme(buttonDiv);
     Object.keys(cssObj).forEach((key) => {
       buttonDiv.style[key] = cssObj[key];
     });
-    updateButtonsTheme(buttonDiv);
 
     buttonDiv.appendChild(button('Theme', switchTheme));
     buttonDiv.appendChild(separator());
@@ -146,31 +145,10 @@
       document.body.classList.remove('DesignTokenThemeSelectors-theme--lightMode');
       document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode');
     }
-    updateButtonsTheme(buttonDiv);
+    setButtonsTheme(buttonDiv);
   }
 
-  function setDefaultButtonsTheme(buttonDiv) {
-    const currentTheme = document.body.classList;
-    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
-      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
-    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
-    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemLightMode')) {
-      buttonDiv.style.setProperty('color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
-    } else {
-      buttonDiv.style.setProperty('color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
-    }
-  }
-
-  function updateButtonsTheme(buttonDiv) {
+  function setButtonsTheme(buttonDiv) {
     const currentTheme = document.body.classList;
     if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
       buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
