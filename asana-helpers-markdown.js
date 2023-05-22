@@ -131,9 +131,9 @@
   // Switch between dark and light themes
   function switchTheme() {
     if (document.body.classList.contains('DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode' && 'DesignTokenThemeSelectors-theme--systemDarkMode')
+      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode', 'DesignTokenThemeSelectors-theme--systemDarkMode')
     } else {
-      document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode')
+      document.body.classList.add('DesignTokenThemeSelectors-theme--lightMode' ? 'DesignTokenThemeSelectors-theme--darkMode' : 'DesignTokenThemeSelectors-theme--systemDarkMode')
     }
     updateButtonsTheme(buttonDiv)
   }
