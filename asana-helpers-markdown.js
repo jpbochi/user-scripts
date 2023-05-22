@@ -151,27 +151,43 @@
 
   function setDefaultButtonsTheme(buttonDiv) {
     const currentTheme = document.body.classList;
-    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode', 'DesignTokenThemeSelectors-theme--systemDarkMode')) {
+    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
+      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
+      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
+      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
+    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
+      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
+      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
+      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
+    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemLightMode')) {
       buttonDiv.style.setProperty('color', '#2E2E30', 'important');
       buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
       buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
     } else {
-      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
+      buttonDiv.style.setProperty('color', '#2E2E30', 'important');
+      buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
+      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
     }
   }
 
   function updateButtonsTheme(buttonDiv) {
     const currentTheme = document.body.classList;
-    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode', 'DesignTokenThemeSelectors-theme--systemDarkMode')) {
+    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
+      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
+      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
+      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
+    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
+      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
+      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
+      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
+    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemLightMode')) {
       buttonDiv.style.setProperty('color', '#2E2E30', 'important');
       buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
       buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
     } else {
-      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
+      buttonDiv.style.setProperty('color', '#2E2E30', 'important');
+      buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
+      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
     }
   }
 
