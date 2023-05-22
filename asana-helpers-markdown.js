@@ -149,7 +149,7 @@
   }
 
   function updateButtonsTheme(buttonDiv) {
-    if (currentTheme === 'DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode') {
+    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode' || 'DesignTokenThemeSelectors-theme--systemDarkMode')) {
       buttonDiv.style.setProperty('color', '#F5F4F3', 'important')
       buttonDiv.style.setProperty('background-color', '#2E2E30', 'important')
       buttonDiv.style.setProperty('border', '1px solid #565557', 'important')
