@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         Asana Dynamic Favicon
-// @namespace    https://gist.githubusercontent.com/jpbochi/f651698e371f7deda33d039ddaa2bda5
+// @namespace    https://github.com/jpbochi/user-scripts
 // @version      0.1.0
-// @description  This modern Asana Inbox favicon notification displays an orange notification circle (just like Asana does in the app) to the top right of the Asana favicon when your active Organization/Workspace Inbox has any unread items. Enjoy!
+// @description  Displays an orange notification circle (just like Asana Inbox tab does) on the top right of the tab favicon.
 // @author       JP Bochi
 // @match        https://app.asana.com/*
 // @grant        none
 // @run-at       document-body
-// @downloadURL  https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-favicon-notification.js
-// @updateURL    https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-favicon-notification.js
+// @icon         https://www.google.com/s2/favicons?domain=asana.com
+// @downloadURL  https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-favicon-notification.js
+// @updateURL    https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-favicon-notification.js
 // ==/UserScript==
 
 // initially forked from https://greasyfork.org/en/scripts/29414-asana-dynamic-favicon by Joe Thomas

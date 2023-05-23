@@ -1,19 +1,16 @@
 // ==UserScript==
 // @name         Only Single Comments
-// @namespace    https://gist.githubusercontent.com/jpbochi/ac88177a0a4741300c2f24c4e33a9c90
+// @namespace    https://github.com/jpbochi/user-scripts
 // @version      1.0.5
 // @description  On GitHub PR inline comments, changes the default button from "Start a review" to "Add single comment"
 // @author       JP Bochi
 // @match        https://github.com/*/*/pull/*
-// @icon         https://www.google.com/s2/favicons?domain=github.com
-// @downloadURL  https://raw.githubusercontent.com/duckduckgo/user-scripts/main/only-single-comments.js
-// @updateURL    https://raw.githubusercontent.com/duckduckgo/user-scripts/main/only-single-comments.js
 // @grant        none
+// @icon         https://www.google.com/s2/favicons?domain=github.com
+// @downloadURL  https://raw.githubusercontent.com/jpbochi/user-scripts/master/only-single-comments.js
+// @updateURL    https://raw.githubusercontent.com/jpbochi/user-scripts/master/only-single-comments.js
 // ==/UserScript==
 
-/**
- * Made for https://www.tampermonkey.net
- */
 (function () {
   'use strict';
 
