@@ -5,7 +5,7 @@
 // @match       https://app.asana.com/*
 // @grant       none
 // @version     1.2.3
-// @author      Nick Goossens, JP Bochi
+// @author      Nick Goossens, JP Bochi, Karl K
 // @require     https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js
 // @downloadURL https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-helpers-markdown.js
 // @updateURL   https://raw.githubusercontent.com/duckduckgo/user-scripts/main/asana-helpers-markdown.js
@@ -60,7 +60,7 @@
 
   // Handle Markdown paste. If the content it already text/html it is pasted as it to allow
   // copy/paste from other tasks. On macOS you can paste as text using Cmd+Alt+Shift+V.
-  const marked = global.marked;
+  const marked = window.marked;
   marked.setOptions({
     gfm: true,
     breaks: true,
@@ -132,36 +132,33 @@
   function switchTheme() {
     const currentTheme = document.body.classList;
 
-    if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--systemDarkMode');
-      document.body.classList.add('DesignTokenThemeSelectors-theme--lightMode');
-    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemLightMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--systemLightMode');
-      document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode');
-    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--darkMode');
-      document.body.classList.add('DesignTokenThemeSelectors-theme--lightMode');
-    } else {
-      document.body.classList.remove('DesignTokenThemeSelectors-theme--lightMode');
-      document.body.classList.add('DesignTokenThemeSelectors-theme--darkMode');
-    }
+    const targetTheme = (
+      currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') ||
+      currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')
+    )
+      ? 'DesignTokenThemeSelectors-theme--lightMode'
+      : 'DesignTokenThemeSelectors-theme--darkMode';
+
+    currentTheme.remove(
+      'DesignTokenThemeSelectors-theme--systemDarkMode',
+      'DesignTokenThemeSelectors-theme--systemLightMode',
+      'DesignTokenThemeSelectors-theme--darkMode',
+      'DesignTokenThemeSelectors-theme--lightMode',
+    );
+    currentTheme.add(targetTheme);
+
     setButtonsTheme(buttonDiv);
   }
 
   function setButtonsTheme(buttonDiv) {
     const currentTheme = document.body.classList;
-    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode')) {
+    if (
+      currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') ||
+      currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')
+    ) {
       buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
       buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
       buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
-    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
-    } else if (currentTheme.contains('DesignTokenThemeSelectors-theme--systemLightMode')) {
-      buttonDiv.style.setProperty('color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
     } else {
       buttonDiv.style.setProperty('color', '#2E2E30', 'important');
       buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
