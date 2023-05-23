@@ -36,7 +36,8 @@
     const addedNodes = Array.from(mutations)
       .filter(mutation => (mutation.type === 'childList'))
       .map(mutation => mutation.addedNodes)
-      .flatMap(addedNodes => Array.from(addedNodes || []));
+      .flatMap(addedNodes => Array.from(addedNodes || []))
+      .filter(added => added.querySelectorAll);
 
     console.info(`=>> Running only-single-comments script on ${addedNodes.length} new nodes…`);
 
