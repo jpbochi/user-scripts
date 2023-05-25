@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Asana Helpers - Markdown, Expand Comments, Theme Switch
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.2.3
+// @version      1.2.4
 // @description  Adds 3 helper buttons, plus paste in markdown format.
 // @match        https://app.asana.com/*
 // @grant        none
 // @author       Nick Goossens, JP Bochi, Karl K
 // @require      https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js
-// @icon         https://www.google.com/s2/favicons?domain=asana.com
+// @icon         https://external-content.duckduckgo.com/i/asana.com.ico
 // @downloadURL  https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
 // @updateURL    https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
 // ==/UserScript==
