@@ -49,6 +49,13 @@
     ]
   );
 
+  const animateButton = (button) => {
+    button.animate(
+      [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
+      { duration: 250, iterations: 1 }
+    );
+  }
+
   window.addEventListener('load', () => {
     var cssObj = {
       position: 'absolute',
@@ -194,14 +201,11 @@
     console.info('=>> Pasting…', markdown);
     await navigator.clipboard.writeText(markdown);
 
-    ev.srcElement.animate(
-      [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
-      { duration: 250, iterations: 1 }
-    );
+    animateButton(ev.srcElement);
   }
 
   // Switch between dark and light themes
-  function switchTheme() {
+  function switchTheme(ev) {
     const currentTheme = document.body.classList;
 
     const targetTheme = (
@@ -220,6 +224,7 @@
     currentTheme.add(targetTheme);
 
     setButtonsTheme(document.getElementById(buttonDivId));
+    animateButton(ev.srcElement);
   }
 
   function setButtonsTheme(buttonDiv) {
@@ -239,7 +244,7 @@
   }
 
   // Expand all comments and show all their details
-  function showAllComments() {
+  function showAllComments(ev) {
     var elements = document.getElementsByClassName('TaskStoryFeed-expandLink');
 
     for (var index = 0; index < elements.length; ++index) {
@@ -253,6 +258,7 @@
     for (var i = 1; i <= 5; i++) {
       setTimeout(showComments, i * 100);
     }
+    animateButton(ev.srcElement);
   }
 
   function showComments() {
