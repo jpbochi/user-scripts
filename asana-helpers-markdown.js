@@ -3,9 +3,10 @@
 // @namespace    https://github.com/jpbochi/user-scripts
 // @version      1.3.0
 // @description  Adds 3 helper buttons, plus paste in markdown format.
+// @author       Nick Goossens, JP Bochi, Karl K
 // @match        https://app.asana.com/*
 // @grant        none
-// @author       Nick Goossens, JP Bochi, Karl K
+// @run-at       document-idle
 // @require      https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js
 // @icon         https://external-content.duckduckgo.com/i/asana.com.ico
 // @downloadURL  https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
@@ -42,6 +43,7 @@
       .map(mutation => mutation.addedNodes)
       .flatMap(nodes => Array.from(nodes || []))
   );
+
   const queryAll = (nodes, query) => (
     [
       ...nodes.filter(node => node.matches && node.matches(query)),
