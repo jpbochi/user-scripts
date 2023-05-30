@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Only Single Comments
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.0.7
+// @version      1.1.0
 // @description  On GitHub PR inline comments, changes the default button from "Start a review" to "Add single comment"
 // @author       JP Bochi
 // @match        https://github.com/*/*/pull/*
@@ -16,10 +16,10 @@
   'use strict';
 
   const defaultToSingleComment = (form) => {
-    console.info('=>> Fixing form…', form);
-
     const existing = form.querySelector('input[type="hidden"][name="single_comment"]');
     if (existing) return;
+
+    console.debug('=>> Fixing form…', form);
 
     const newInput = document.createElement('input');
     newInput.setAttribute('type', 'hidden');
@@ -27,8 +27,23 @@
     newInput.setAttribute('value', '1');
     form.insertBefore(newInput, form.firstChild)
 
-    form.querySelector('.form-actions .btn-primary')?.classList.remove('btn-primary');
-    form.querySelector('.form-actions button[name="single_comment"')?.classList.add('btn-primary')
+    // github.com uses Button--primary, while some GitHub Enterprise instances may still use btn-primary.
+    const reviewBtn = form.querySelector('.form-actions .Button--primary,.form-actions .btn-primary');
+    const singleBtn = form.querySelector('.form-actions button[name="single_comment"')
+    if (reviewBtn) {
+      reviewBtn.classList.replace('Button--primary', 'Button--secondary');
+      reviewBtn.classList.remove('btn-primary');
+      console.debug('=>> Fixed review button.', reviewBtn);
+    } else {
+      console.warn('=>> No review button found!');
+    }
+    if (singleBtn) {
+      singleBtn.classList.replace('Button--secondary', 'Button--primary');
+      singleBtn.classList.add('btn-primary');
+      console.debug('=>> Fixed single_comment button.', singleBtn);
+    } else {
+      console.warn('=>> No single_comment button found!');
+    }
 
     console.info('=>> Fixed inline comment form.');
   };
@@ -40,19 +55,27 @@
       .flatMap(addedNodes => Array.from(addedNodes || []))
       .filter(added => added.querySelectorAll);
 
-    console.info(`=>> Running only-single-comments script on ${addedNodes.length} new nodes…`);
+    console.debug(`=>> Running only-single-comments script on ${addedNodes.length} new nodes…`);
 
     addedNodes
       .flatMap(added => Array.from(added.querySelectorAll('form.js-inline-comment-form')))
       .forEach(defaultToSingleComment);
   };
-  const config = { attributes: false, childList: true, subtree: true };
-  const targetNode = document.getElementById('repo-content-pjax-container');
+
+  const fixAll = () => {
+    const targetNode = document.getElementById('js-repo-pjax-container');
+
+    Array.from(targetNode.querySelectorAll('form.js-inline-comment-form'))
+      .forEach(defaultToSingleComment);
+  }
 
   // Fix any pre-existing forms
-  Array.from(targetNode.querySelectorAll('form.js-inline-comment-form'))
-    .forEach(defaultToSingleComment);
+  fixAll();
 
   // Watch for new forms
+  const config = { attributes: false, childList: true, subtree: true };
+  const targetNode = document.getElementById('js-repo-pjax-container');
   new MutationObserver(observe).observe(targetNode, config);
+
+  window.defaultToSingleComment = fixAll;
 })();
