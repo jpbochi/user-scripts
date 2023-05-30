@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asana Helpers - Markdown, Expand Comments, Theme Switch
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.3.1
+// @version      1.3.2
 // @description  Adds 3 helper buttons, plus paste in markdown format.
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
@@ -37,36 +37,30 @@
   };
 
   // Helper functions for https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
-  const getAddedNodes = (mutations) => (
+  const getAddedNodes = (mutations) =>
     Array.from(mutations)
-      .filter(mutation => (mutation.type === 'childList'))
-      .map(mutation => mutation.addedNodes)
-      .flatMap(nodes => Array.from(nodes || []))
-  );
+      .filter((mutation) => mutation.type === 'childList')
+      .map((mutation) => mutation.addedNodes)
+      .flatMap((nodes) => Array.from(nodes || []));
 
-  const queryAll = (nodes, query) => (
-    [
-      ...nodes.filter(node => node.matches && node.matches(query)),
-      ...nodes.flatMap(node => Array.from(node.querySelectorAll ? node.querySelectorAll(query) : [])),
-    ]
-  );
+  const queryAll = (nodes, query) => [
+    ...nodes.filter((node) => node.matches && node.matches(query)),
+    ...nodes.flatMap((node) => Array.from(node.querySelectorAll ? node.querySelectorAll(query) : [])),
+  ];
 
   const animateButton = (button) => {
-    button.animate(
-      [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
-      { duration: 250, iterations: 1 }
-    );
-  }
+    button.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 250, iterations: 1 });
+  };
 
   window.addEventListener('load', () => {
     var cssObj = {
       position: 'absolute',
-      top: '7px',
-      left: '172px',
-      padding: '5px 12px',
+      top: '0.44rem',
+      left: '12rem',
+      padding: '0.52rem 0.75rem',
       'border-radius': '999px',
       'z-index': 50, // Setting to 50 just in case there are other elements with z-index 1
-      fontSize: '16px',
+      fontSize: '1rem',
     };
     const buttonDiv = document.createElement('div');
     buttonDiv.id = buttonDivId;
@@ -75,11 +69,11 @@
       buttonDiv.style[key] = cssObj[key];
     });
 
-    buttonDiv.appendChild(button('☯', switchTheme, 'Switch dark/light themes.'));
+    buttonDiv.appendChild(button('\u262F', switchTheme, 'Switch dark/light themes.'));
     buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('↕', showAllComments, 'Expand all comments.'));
+    buttonDiv.appendChild(button('\u2195', showAllComments, 'Expand all comments.'));
     buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('🔗', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
+    buttonDiv.appendChild(button('\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
 
     document.body.appendChild(buttonDiv);
   });
@@ -144,23 +138,24 @@
     return null;
   }
 
-  const waitForSuccessNotification = () => (new Promise((resolve, _reject) => {
-    const observer = new MutationObserver((mutations) => {
-      const addedNodes = getAddedNodes(mutations);
+  const waitForSuccessNotification = () =>
+    new Promise((resolve, _reject) => {
+      const observer = new MutationObserver((mutations) => {
+        const addedNodes = getAddedNodes(mutations);
 
-      const [notification] = queryAll(addedNodes, '.ToastNotificationContent');
-      if (notification) {
-        observer.disconnect();
-        console.debug('=>> Found notification.', { notification });
-        return resolve(notification);
-      }
-      console.debug('=>> Mutation, but notification?', { mutations });
+        const [notification] = queryAll(addedNodes, '.ToastNotificationContent');
+        if (notification) {
+          observer.disconnect();
+          console.debug('=>> Found notification.', { notification });
+          return resolve(notification);
+        }
+        console.debug('=>> Mutation, but notification?', { mutations });
+      });
+
+      const notificationsDiv = document.querySelector('.ToastManager');
+      console.debug('=>> Observing…', notificationsDiv);
+      observer.observe(notificationsDiv, { subtree: true, childList: true });
     });
-
-    const notificationsDiv = document.querySelector('.ToastManager');
-    console.debug('=>> Observing…', notificationsDiv);
-    observer.observe(notificationsDiv, { subtree: true, childList: true });
-  }));
 
   const getCurrentTaskUrlFromCopyLinkButton = async () => {
     const observerWaiting = waitForSuccessNotification();
@@ -172,7 +167,7 @@
     const href = await navigator.clipboard.readText();
     console.debug('=>> Read:', { href }); // TODO: should we verify that the href is actually an URL pointing to app.asana.com?
     return href;
-  }
+  };
 
   const getCurrentTaskUrlFromPage = async () => {
     const taskPane = document.querySelector('.TaskPane[data-task-id]');
@@ -181,19 +176,20 @@
       return `https://app.asana.com/0/0/${taskId}/f`;
     }
 
-    const conversationLink = document.querySelector('.ConversationPane .ConversationTitleAndContext-title a[href]')
+    const conversationLink = document.querySelector('.ConversationPane .ConversationTitleAndContext-title a[href]');
     if (conversationLink) return conversationLink.href;
 
     // Fallback to Asana's "Copy Link" button.
     return await getCurrentTaskUrlFromCopyLinkButton();
-  }
+  };
 
   // Get a Markdown link for the current task formatted as [Task Title](Link)
   const getMDLink = async (ev) => {
     console.debug('=>> Click:', ev);
     const href = await getCurrentTaskUrlFromPage();
 
-    if (ev.metaKey || ev.ctrlKey || ev.altKey || (ev.button === 1)) { // meta for MacOS, ctrl for Windows, middle click, or alt for good measure
+    if (ev.metaKey || ev.ctrlKey || ev.altKey || ev.button === 1) {
+      // meta for MacOS, ctrl for Windows, middle click, or alt for good measure
       console.info('=>> Opening tab…', { href });
       return window.open(href, '_blank').focus();
     }
@@ -204,24 +200,22 @@
     await navigator.clipboard.writeText(markdown);
 
     animateButton(ev.srcElement);
-  }
+  };
 
   // Switch between dark and light themes
   function switchTheme(ev) {
     const currentTheme = document.body.classList;
 
-    const targetTheme = (
-      currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') ||
-      currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')
-    )
-      ? 'DesignTokenThemeSelectors-theme--lightMode'
-      : 'DesignTokenThemeSelectors-theme--darkMode';
+    const targetTheme =
+      currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') || currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')
+        ? 'DesignTokenThemeSelectors-theme--lightMode'
+        : 'DesignTokenThemeSelectors-theme--darkMode';
 
     currentTheme.remove(
       'DesignTokenThemeSelectors-theme--systemDarkMode',
       'DesignTokenThemeSelectors-theme--systemLightMode',
       'DesignTokenThemeSelectors-theme--darkMode',
-      'DesignTokenThemeSelectors-theme--lightMode',
+      'DesignTokenThemeSelectors-theme--lightMode'
     );
     currentTheme.add(targetTheme);
 
@@ -231,10 +225,7 @@
 
   function setButtonsTheme(buttonDiv) {
     const currentTheme = document.body.classList;
-    if (
-      currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') ||
-      currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')
-    ) {
+    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') || currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
       buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
       buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
       buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
