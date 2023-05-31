@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asana Dynamic Favicon
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      0.1.3
+// @version      0.1.4
 // @description  Displays an orange notification circle (just like Asana Inbox tab does) on the top right of the tab favicon.
 // @author       JP Bochi
 // @match        *://app.asana.com/*
@@ -52,7 +52,10 @@
 
   const waitForSideBar = () => (new Promise((resolve, reject) => {
     const loadedSidebar = document.querySelector('#asana_sidebar');
-    if (loadedSidebar) return Promise.resolve(loadedSidebar);
+    if (loadedSidebar) {
+      console.debug('=>> Found sidebar already present.', { loadedSidebar });
+      return resolve(loadedSidebar);
+    }
 
     const observer = new MutationObserver((mutations) => {
       const addedNodes = getAddedNodes(mutations);
@@ -70,23 +73,26 @@
         console.debug('=>> Found fullscreen. No sidebar expected.', { fullscreen });
         return reject();
       }
+
+      console.warn('=>> Did not find either sidebar or fullscreen.', { addedNodes });
     });
 
     observer.observe(document.body, { subtree: true, childList: true });
   }));
 
   const install = () => {
-    waitForSideBar().then((sidebar) => {
+    return waitForSideBar().then((sidebar) => {
       const lookForNotifications = () => {
         const hasNotifications = !!sidebar.querySelector('.NotificationsIndicator');
         updateFavicon(hasNotifications);
       };
 
       // Update icon once before starting the MutationObserver
+      console.debug('=>> Updating favicon for the first time.');
       lookForNotifications();
 
       const observer = new MutationObserver((mutations) => {
-        console.debug('=>>', { mutations });
+        console.debug('=>> Sidebar mutations:', { mutations });
         if (didAddOrRemoveNodes(mutations)) {
           lookForNotifications();
         }
