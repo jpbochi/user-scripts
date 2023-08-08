@@ -74,6 +74,8 @@
     buttonDiv.appendChild(button('\u2195', showAllComments, 'Expand all comments.'));
     buttonDiv.appendChild(separator());
     buttonDiv.appendChild(button('\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
+    buttonDiv.appendChild(separator());
+    buttonDiv.appendChild(button('\u{1F4DD}', toggleReadOnly, 'Toggles task\'s contenteditable on/off.'));
 
     document.body.appendChild(buttonDiv);
   });
@@ -199,6 +201,20 @@
     console.info('=>> Pasting…', markdown);
     await navigator.clipboard.writeText(markdown);
 
+    animateButton(ev.srcElement);
+  };
+
+  const toggleReadOnly = async (ev) => {
+    const taskEditable = document.querySelector('#TaskDescriptionView .ProseMirror');
+    if (!taskEditable) {
+      return;
+    }
+    const editable = taskEditable.getAttribute('contenteditable') !== 'true';
+    taskEditable.setAttribute('contenteditable', editable);
+
+    // '\u{1F4DD}' = 📝
+    // '\u{1F4D6}' = 📖
+    ev.srcElement.innerHTML = editable ? '\u{1F4DD}' : '\u{1F4D6}';
     animateButton(ev.srcElement);
   };
 
