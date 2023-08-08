@@ -18,9 +18,10 @@
 
   const buttonDivId = '__helpers_div__';
 
-  const button = (content, onClick, title) => {
+  const button = (content, klass, onClick, title) => {
     var btn = document.createElement('button');
     btn.innerHTML = content;
+    btn.classList.add(klass);
     btn.setAttribute('title', title || '');
     btn.onclick = onClick;
     btn.onauxclick = onClick;
@@ -69,15 +70,20 @@
       buttonDiv.style[key] = cssObj[key];
     });
 
-    buttonDiv.appendChild(button('\u262F', switchTheme, 'Switch dark/light themes.'));
+    buttonDiv.appendChild(button('\u262F', '__theme', switchTheme, 'Switch dark/light themes.'));
     buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u2195', showAllComments, 'Expand all comments.'));
+    buttonDiv.appendChild(button('\u2195', '__expand', showAllComments, 'Expand all comments.'));
     buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
+    buttonDiv.appendChild(button('\u29C9', '__md_link', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
     buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u{1F4DD}', toggleReadOnly, 'Toggles task\'s contenteditable on/off.'));
+    buttonDiv.appendChild(button('\u{1F4DD}', '__readonly', toggleReadOnly, 'Toggles task\'s contenteditable on/off.'));
 
     document.body.appendChild(buttonDiv);
+  });
+
+  navigation.addEventListener('navigate', () => {
+    console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
+    setTimeout(refreshReadOnlyState, 99);
   });
 
   // Handle Markdown paste. If the content it already text/html it is pasted as it to allow
@@ -204,17 +210,22 @@
     animateButton(ev.srcElement);
   };
 
-  const toggleReadOnly = async (ev) => {
+  const refreshReadOnlyState = () => {
     const taskEditable = document.querySelector('#TaskDescriptionView .ProseMirror');
-    if (!taskEditable) {
-      return;
-    }
-    const editable = taskEditable.getAttribute('contenteditable') !== 'true';
-    taskEditable.setAttribute('contenteditable', editable);
+    const button = document.querySelector(`#${buttonDivId} .__readonly`);
+    if (!taskEditable || !button) return;
 
-    // '\u{1F4DD}' = 📝
-    // '\u{1F4D6}' = 📖
-    ev.srcElement.innerHTML = editable ? '\u{1F4DD}' : '\u{1F4D6}';
+    // '\u{1F4DD}' = 📝; '\u{1F4D6}' = 📖
+    const editable = taskEditable.getAttribute('contenteditable') === 'true';
+    button.innerHTML = editable ? '\u{1F4DD}' : '\u{1F4D6}';
+  };
+
+  const toggleReadOnly = (ev) => {
+    const taskEditable = document.querySelector('#TaskDescriptionView .ProseMirror');
+    const editable = taskEditable.getAttribute('contenteditable') === 'true';
+    taskEditable.setAttribute('contenteditable', !editable);
+
+    refreshReadOnlyState();
     animateButton(ev.srcElement);
   };
 
