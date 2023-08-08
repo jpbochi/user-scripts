@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asana Dynamic Favicon
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      0.1.4
+// @version      0.1.5
 // @description  Displays an orange notification circle (just like Asana Inbox tab does) on the top right of the tab favicon.
 // @author       JP Bochi
 // @match        *://app.asana.com/*
