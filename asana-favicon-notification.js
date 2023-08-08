@@ -57,21 +57,19 @@
       return resolve(loadedSidebar);
     }
 
-    const observer = new MutationObserver((mutations) => {
-      const addedNodes = getAddedNodes(mutations);
-
-      const [sidebar] = queryAll(addedNodes, '#asana_sidebar');
+    const observer = new MutationObserver(() => {
+      const sidebar = document.querySelector('#asana_sidebar');
       if (sidebar) {
         observer.disconnect();
         console.debug('=>> Found sidebar.', { sidebar });
         return resolve(sidebar);
       }
 
-      const [fullscreen] = queryAll(addedNodes, '#asana_full_page');
+      const fullscreen = document.querySelector('#asana_full_page');
       if (fullscreen) {
         observer.disconnect();
         console.debug('=>> Found fullscreen. No sidebar expected.', { fullscreen });
-        return reject();
+        return reject(fullscreen);
       }
 
       console.warn('=>> Did not find either sidebar or fullscreen.', { addedNodes });
@@ -103,7 +101,9 @@
         characterData: false,
         attributes: false,
       });
-    }, () => {});
+    }, () => {
+      console.debug('=>> Aborted waiting for sidebar.');
+    });
   };
 
   install();
