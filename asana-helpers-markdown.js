@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Asana Helpers - Markdown, Expand Comments, Theme Switch
+// @name         Asana Helpers - Markdown, Expand Comments, Theme Switch, Read-Only Mode
 // @namespace    https://github.com/jpbochi/user-scripts
 // @version      1.3.2
-// @description  Adds 3 helper buttons, plus paste in markdown format.
+// @description  Adds 4 helper buttons, plus paste in markdown format.
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @grant        none
@@ -28,9 +28,10 @@
     return btn;
   };
 
-  const separator = () => {
+  const separator = (klass) => {
     var sep = document.createElement('div');
     sep.innerHTML = '&nbsp;&nbsp;';
+    if (klass) sep.classList.add(klass);
     sep.style.setProperty('display', 'inline-block');
     sep.style.setProperty('opacity', '0.5');
     sep.style.setProperty('margin', '0 4px');
@@ -75,15 +76,14 @@
     buttonDiv.appendChild(button('\u2195', '__expand', showAllComments, 'Expand all comments.'));
     buttonDiv.appendChild(separator());
     buttonDiv.appendChild(button('\u29C9', '__md_link', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
-    buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u{1F4DD}', '__readonly', toggleReadOnly, 'Toggles task\'s contenteditable on/off.'));
-
     document.body.appendChild(buttonDiv);
+
+    waitForEditorThenConfigureIt();
   });
 
   navigation.addEventListener('navigate', () => {
     console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
-    setTimeout(refreshReadOnlyState, 99);
+    setTimeout(waitForEditorThenConfigureIt, 99);
   });
 
   // Handle Markdown paste. If the content it already text/html it is pasted as it to allow
@@ -123,10 +123,8 @@
 
   // Find the parent editor associated with this element
   function getEditor(element) {
-    var isEditor = false;
-
-    var iterator = element.classList.values();
-
+    let isEditor = false;
+    const iterator = element.classList.values();
     for (const cls of iterator) {
       if (cls.startsWith('ProsemirrorEditor')) {
         isEditor = true;
@@ -135,42 +133,49 @@
     }
 
     if (isEditor) {
-      var editor = element;
+      let editor = element;
       while (editor && !editor.classList.contains('ProsemirrorEditor')) {
         editor = editor.parentElement;
       }
-
       return editor;
     }
-
     return null;
   }
 
-  const waitForSuccessNotification = () =>
-    new Promise((resolve, _reject) => {
-      const observer = new MutationObserver((mutations) => {
-        const addedNodes = getAddedNodes(mutations);
+  const waitForAddedNode = (rootElement, targetSelector, timeoutMs) => {
+    const preexisting = rootElement.querySelector(targetSelector);
+    if (preexisting) return Promise.resolve(preexisting);
 
-        const [notification] = queryAll(addedNodes, '.ToastNotificationContent');
-        if (notification) {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const observer = new MutationObserver((mutations) => {
+        if ((Date.now() - start) > timeoutMs) {
+          console.debug(`=>> Timed out waiting for '${targetSelector}'.`);
           observer.disconnect();
-          console.debug('=>> Found notification.', { notification });
-          return resolve(notification);
+          return reject();
         }
-        console.debug('=>> Mutation, but notification?', { mutations });
+
+        const [target] = queryAll(getAddedNodes(mutations), targetSelector);
+        if (target) {
+          console.debug(`=>> Found '${targetSelector}'.`, { target });
+          observer.disconnect();
+          return resolve(target);
+        }
+        console.debug(`=>> Still waiting for '${targetSelector}'...`);
       });
 
-      const notificationsDiv = document.querySelector('.ToastManager');
-      console.debug('=>> Observing…', notificationsDiv);
-      observer.observe(notificationsDiv, { subtree: true, childList: true });
+      console.debug('=>> Observing…', rootElement);
+      observer.observe(rootElement, { subtree: true, childList: true });
     });
+  };
 
   const getCurrentTaskUrlFromCopyLinkButton = async () => {
-    const observerWaiting = waitForSuccessNotification();
+    const observerWaitingForSuccessNotification =
+      waitForAddedNode(document.querySelector('.ToastManager'), '.ToastNotificationContent', 5000);
     document.querySelector('.TaskPaneToolbar-copyLinkButton,.ConversationToolbar-copyLinkButton').click();
 
     console.info('=>> Waiting for copied link…');
-    await observerWaiting;
+    await observerWaitingForSuccessNotification;
     console.info('=>> Reading copied link…');
     const href = await navigator.clipboard.readText();
     console.debug('=>> Read:', { href }); // TODO: should we verify that the href is actually an URL pointing to app.asana.com?
@@ -210,22 +215,55 @@
     animateButton(ev.srcElement);
   };
 
-  const refreshReadOnlyState = () => {
-    const taskEditable = document.querySelector('#TaskDescriptionView .ProseMirror');
-    const button = document.querySelector(`#${buttonDivId} .__readonly`);
-    if (!taskEditable || !button) return;
+  const refreshReadOnlyState = (taskEditor) => {
+    taskEditor ||= document.querySelector('#TaskDescriptionView .ProseMirror');
 
     // '\u{1F4DD}' = 📝; '\u{1F4D6}' = 📖
-    const editable = taskEditable.getAttribute('contenteditable') === 'true';
-    button.innerHTML = editable ? '\u{1F4DD}' : '\u{1F4D6}';
+    const editable = taskEditor.getAttribute('contenteditable') === 'true';
+    const icon = editable ? '\u{1F4DD}' : '\u{1F4D6}';
+
+    Array.from(
+      document.querySelectorAll(`#${buttonDivId} .__readonly, .TextEditorFixedToolbar .__readonly`)
+    ).forEach(button => button.innerHTML = icon);
+  };
+
+  const waitForEditorThenConfigureIt = async () => {
+    const taskEditor = await waitForAddedNode(document, '#TaskDescriptionView .ProseMirror', 9000);
+    setTimeout(() => resetReadOnlyState(taskEditor), 200);
+  }
+
+  const resetReadOnlyState = async (taskEditor) => {
+    const assignee = document.querySelector('#task_pane_assignee_input .AvatarPhoto-image')?.style.backgroundImage;
+    const userSelf = document.querySelector('.CommentComposer .AvatarButton .AvatarPhoto-image')?.style.backgroundImage;
+    const creator = document.querySelector('.TaskStoryFeed-taskCreationStory .AvatarPhoto-image')?.style.backgroundImage;
+    const assigneeInitials = document.querySelector('#task_pane_assignee_input .AvatarPhoto')?.innerText;
+    const userSelfInitials = document.querySelector('.CommentComposer .AvatarButton .AvatarPhoto')?.innerText;
+    const creatorInitials = document.querySelector('.TaskStoryFeed-taskCreationStory .AvatarPhoto')?.innerText;
+
+    // TODO: make this logic configurable. For possible ways to do that:
+    // - https://stackoverflow.com/questions/14594346/create-a-config-or-options-page-for-a-greasemonkey-script
+    // - https://github.com/sizzlemctwizzle/GM_config/wiki
+    const editable = (
+      (assignee === userSelf) || (creator === userSelf)
+    );
+    console.info('==> Configuring task editor.', { editable, assigneeInitials, userSelfInitials, creatorInitials, });
+    taskEditor.setAttribute('contenteditable', editable);
+
+    const editorToolbar = taskEditor.parentElement.querySelector('.TextEditorFixedToolbar');
+    if (!editorToolbar.querySelector('.__readonly')) {
+      editorToolbar.appendChild(separator('TextEditorFixedToolbar-divider'));
+      editorToolbar.appendChild(button('?', '__readonly', toggleReadOnly, 'Toggles task\'s contenteditable on/off.'));
+    }
+
+    refreshReadOnlyState(taskEditor);
   };
 
   const toggleReadOnly = (ev) => {
-    const taskEditable = document.querySelector('#TaskDescriptionView .ProseMirror');
-    const editable = taskEditable.getAttribute('contenteditable') === 'true';
-    taskEditable.setAttribute('contenteditable', !editable);
+    const taskEditor = document.querySelector('#TaskDescriptionView .ProseMirror');
+    const editable = taskEditor.getAttribute('contenteditable') === 'true';
+    taskEditor.setAttribute('contenteditable', !editable);
 
-    refreshReadOnlyState();
+    refreshReadOnlyState(taskEditor);
     animateButton(ev.srcElement);
   };
 
