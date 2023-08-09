@@ -54,7 +54,10 @@
     button.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 250, iterations: 1 });
   };
 
-  window.addEventListener('load', () => {
+  const setupButtons = () => {
+    const preexisting = document.getElementById(buttonDivId);
+    if (preexisting) return;
+
     var cssObj = {
       position: 'absolute',
       top: '0.44rem',
@@ -79,7 +82,12 @@
     document.body.appendChild(buttonDiv);
 
     waitForEditorThenConfigureIt();
-  });
+    window.removeEventListener('focus', setupButtons);
+  };
+
+  window.addEventListener('load', setupButtons);
+  window.addEventListener('pageshow', setupButtons);
+  window.addEventListener('focus', setupButtons);
 
   navigation.addEventListener('navigate', () => {
     console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
@@ -246,7 +254,7 @@
     const editable = (
       (assignee === userSelf) || (creator === userSelf)
     );
-    console.info('==> Configuring task editor.', { editable, assigneeInitials, userSelfInitials, creatorInitials, });
+    console.info('==> Configuring task editor.', JSON.stringify({ editable, assigneeInitials, userSelfInitials, creatorInitials }));
     taskEditor.setAttribute('contenteditable', editable);
 
     const editorToolbar = taskEditor.parentElement.querySelector('.TextEditorFixedToolbar');
