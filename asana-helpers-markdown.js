@@ -217,6 +217,7 @@
     if (ev.metaKey || ev.ctrlKey || ev.altKey || ev.button === 1) {
       // meta for MacOS, ctrl for Windows, middle click, or alt for good measure
       console.info('=>> Opening tab…', { href });
+      animateButton(ev.srcElement);
       return window.open(href, '_blank').focus();
     }
 
@@ -224,7 +225,6 @@
     var markdown = `[${title}](${href})`;
     console.info('=>> Pasting…', markdown);
     await navigator.clipboard.writeText(markdown);
-
     animateButton(ev.srcElement);
   };
 
