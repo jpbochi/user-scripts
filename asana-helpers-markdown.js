@@ -18,23 +18,26 @@
 
   const buttonDivId = '__helpers_div__';
 
-  const button = (content, klass, onClick, title) => {
+  const buildButton = (content, onClick, title, ...classes) => {
     var btn = document.createElement('button');
     btn.innerHTML = content;
-    btn.classList.add(klass);
+    btn.classList.add(
+      'ThemeableIconButtonPresentation', 'ThemeableIconButtonPresentation--medium', 'ThemeableIconButtonPresentation--isEnabled',
+      'SubtleIconButton', 'SubtleIconButton--standardTheme',
+      ...[classes].flat()
+    );
+    btn.style.setProperty('border-radius', '50%');
+
     btn.setAttribute('title', title || '');
     btn.onclick = onClick;
     btn.onauxclick = onClick;
     return btn;
   };
 
-  const separator = (klass) => {
+  const buildSeparator = (klass) => {
     var sep = document.createElement('div');
-    sep.innerHTML = '&nbsp;&nbsp;';
     if (klass) sep.classList.add(klass);
-    sep.style.setProperty('display', 'inline-block');
-    sep.style.setProperty('opacity', '0.5');
-    sep.style.setProperty('margin', '0 4px');
+    sep.style.setProperty('margin', '4px');
     return sep;
   };
 
@@ -58,27 +61,29 @@
     const preexisting = document.getElementById(buttonDivId);
     if (preexisting) return;
 
-    var cssObj = {
+    const buttonDiv = document.createElement('div');
+    buttonDiv.id = buttonDivId;
+    buttonDiv.classList.add('OmnibuttonCorangeSidebarButton', 'ThemeableCardPresentation');
+    setButtonsTheme(buttonDiv);
+    Object.entries({
       position: 'absolute',
       top: '0.44rem',
       left: '12rem',
-      padding: '0.52rem 0.75rem',
-      'border-radius': '999px',
       'z-index': 50, // Setting to 50 just in case there are other elements with z-index 1
-      fontSize: '1rem',
-    };
-    const buttonDiv = document.createElement('div');
-    buttonDiv.id = buttonDivId;
-    setButtonsTheme(buttonDiv);
-    Object.keys(cssObj).forEach((key) => {
-      buttonDiv.style[key] = cssObj[key];
-    });
+    }).forEach(([prop, value]) => { buttonDiv.style.setProperty(prop, value); });
 
-    buttonDiv.appendChild(button('\u262F', '__theme', switchTheme, 'Switch dark/light themes.'));
-    buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u2195', '__expand', showAllComments, 'Expand all comments.'));
-    buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u29C9', '__md_link', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
+    buttonDiv.appendChild(buildButton(
+      '\u262F', switchTheme, 'Switch dark/light themes.',
+      '__theme', 'OmnibuttonCorangeSidebarButton-iconContainer',
+    ));
+    buttonDiv.appendChild(buildButton(
+      '\u2195', showAllComments, 'Expand all comments.',
+      '__expand', 'OmnibuttonCorangeSidebarButton-iconContainer',
+    ));
+    buttonDiv.appendChild(buildButton(
+      '\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+      '__md_link', 'OmnibuttonCorangeSidebarButton-iconContainer',
+    ));
     document.body.appendChild(buttonDiv);
 
     waitForEditorThenConfigureIt();
@@ -160,7 +165,7 @@
         if ((Date.now() - start) > timeoutMs) {
           console.debug(`=>> Timed out waiting for '${targetSelector}'.`);
           observer.disconnect();
-          return reject();
+          return reject('Observer wait timeout.');
         }
 
         const [target] = queryAll(getAddedNodes(mutations), targetSelector);
@@ -232,10 +237,29 @@
 
     Array.from(
       document.querySelectorAll(`#${buttonDivId} .__readonly, .TextEditorFixedToolbar .__readonly`)
-    ).forEach(button => button.innerHTML = icon);
+    ).forEach(button => {
+      button.innerHTML = icon;
+      button.classList.toggle('SubtleIconToggleButton--isPressed', !editable);
+      button.classList.toggle('SubtleIconToggleButton--isNotPressed', editable);
+    });
   };
 
   const waitForEditorThenConfigureIt = async () => {
+    waitForAddedNode(document, '.TaskPane, .ConversationPane', 9000).then(pane => {
+      if (!pane.querySelector('.__md_link')) pane.querySelector('.TaskPaneToolbar-copyLinkButton, .ConversationToolbar-copyLinkButton')?.after(
+        buildButton(
+          '\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+          '__md_link', 'TaskPaneToolbar-button',
+        ),
+      );
+      if (!pane.querySelector('.__expand')) pane.querySelector('.FollowersBar')?.prepend(
+        buildButton(
+          '\u2195', showAllComments, 'Expand all comments.',
+          '__expand',
+        ),
+      );
+    });
+
     const taskEditor = await waitForAddedNode(document, '#TaskDescriptionView .ProseMirror', 9000);
     setTimeout(() => resetReadOnlyState(taskEditor), 200);
   }
@@ -259,8 +283,12 @@
 
     const editorToolbar = taskEditor.parentElement.querySelector('.TextEditorFixedToolbar');
     if (!editorToolbar.querySelector('.__readonly')) {
-      editorToolbar.appendChild(separator('TextEditorFixedToolbar-divider'));
-      editorToolbar.appendChild(button('?', '__readonly', toggleReadOnly, 'Toggles task\'s contenteditable on/off.'));
+      editorToolbar.appendChild(buildSeparator('TextEditorFixedToolbar-divider'));
+      editorToolbar.appendChild(buildButton(
+        '?', toggleReadOnly, 'Toggles task\'s contenteditable on/off.',
+        '__readonly',
+        'SubtleIconToggleButton', 'SubtleIconToggleButton--standardTheme', 'SubtleIconToggleButton--isNotPressed',
+      ));
     }
 
     refreshReadOnlyState(taskEditor);
