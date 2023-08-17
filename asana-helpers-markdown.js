@@ -1,22 +1,27 @@
 // ==UserScript==
-// @name         Asana Helpers - Markdown, Expand Comments, Theme Switch, Read-Only Mode
+// @name         Asana Helpers - Markdown et al
+// @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.3.2
-// @description  Adds 4 helper buttons, plus paste in markdown format.
+// @version      1.4.0
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
-// @grant        none
 // @run-at       document-idle
 // @require      https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js
 // @icon         https://external-content.duckduckgo.com/i/asana.com.ico
 // @downloadURL  https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
 // @updateURL    https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
+// @require      https://openuserjs.org/src/libs/sizzle/GM_config.js
+// @grant        GM.registerMenuCommand
+// @grant        GM.unregisterMenuCommand
+// @grant        GM.getValue
+// @grant        GM.setValue
 // ==/UserScript==
 
 (function () {
   'use strict';
 
   const buttonDivId = '__helpers_div__';
+  let autoReadOnlyMenuId = null;
 
   const buildButton = (content, onClick, title, ...classes) => {
     var btn = document.createElement('button');
@@ -81,7 +86,7 @@
       '__expand', 'OmnibuttonCorangeSidebarButton-iconContainer',
     ));
     buttonDiv.appendChild(buildButton(
-      '\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+      '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
       '__md_link', 'OmnibuttonCorangeSidebarButton-iconContainer',
     ));
     document.body.appendChild(buttonDiv);
@@ -93,8 +98,7 @@
   window.addEventListener('load', setupButtons);
   window.addEventListener('pageshow', setupButtons);
   window.addEventListener('focus', setupButtons);
-
-  navigation.addEventListener('navigate', () => {
+  window.navigation.addEventListener('navigate', () => {
     console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
     setTimeout(waitForEditorThenConfigureIt, 99);
   });
@@ -218,12 +222,12 @@
       // meta for MacOS, ctrl for Windows, middle click, or alt for good measure
       console.info('=>> Opening tab…', { href });
       animateButton(ev.srcElement);
-      return window.open(href, '_blank').focus();
+      return window.open(href, '_blank', { noopener: true, noreferrer: true }).focus();
     }
 
     var title = document.querySelector('.TaskPaneToolbarAnimation-title,.ConversationTitleAndContext-title').innerText;
     var markdown = `[${title}](${href})`;
-    console.info('=>> Pasting…', markdown);
+    console.info('=>> Pasting…', { markdown });
     await navigator.clipboard.writeText(markdown);
     animateButton(ev.srcElement);
   };
@@ -244,42 +248,74 @@
     });
   };
 
+  const updateMenuCommands = async () => {
+    const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
+    console.info('=>> Config loaded.', { autoReadOnlyEnabled });
+
+    if (autoReadOnlyMenuId) { await GM.unregisterMenuCommand(autoReadOnlyMenuId); }
+
+    const menuText = autoReadOnlyEnabled ? 'Disable auto read-only!' : 'Enable auto read-only!';
+    autoReadOnlyMenuId = await GM.registerMenuCommand(menuText, async () => {
+      const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
+      await GM.setValue('autoReadOnlyEnabled', !autoReadOnlyEnabled);
+      await updateMenuCommands();
+
+      if (!autoReadOnlyEnabled) { resetReadOnlyState(); }
+    });
+  };
+
   const waitForEditorThenConfigureIt = async () => {
+    updateMenuCommands();
+
     waitForAddedNode(document, '.TaskPane, .ConversationPane', 9000).then(pane => {
       if (!pane.querySelector('.__md_link')) pane.querySelector('.TaskPaneToolbar-copyLinkButton, .ConversationToolbar-copyLinkButton')?.after(
         buildButton(
-          '\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+          '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
           '__md_link', 'TaskPaneToolbar-button',
         ),
       );
       if (!pane.querySelector('.__expand')) pane.querySelector('.FollowersBar')?.prepend(
-        buildButton(
-          '\u2195', showAllComments, 'Expand all comments.',
-          '__expand',
-        ),
+        buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
       );
+    });
+    // TODO: alternative place: '.TaskStoryFeed .TaskStoryFeed-expandLink.PrimaryLinkButton'
+    waitForAddedNode(document, '.TaskStoryFeed .TaskStoryFeed-dropdownButton', 9000).then(feedDropdown => {
+      if (!feedDropdown.parentElement.querySelector('.__expand')) {
+        feedDropdown.after(
+          buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
+        );
+      };
     });
 
     const taskEditor = await waitForAddedNode(document, '#TaskDescriptionView .ProseMirror', 9000);
     setTimeout(() => resetReadOnlyState(taskEditor), 200);
   }
 
-  const resetReadOnlyState = async (taskEditor) => {
-    const assignee = document.querySelector('#task_pane_assignee_input .AvatarPhoto-image')?.style.backgroundImage;
+  const asanaHelperShouldTaskBeEditable = () => {
     const userSelf = document.querySelector('.CommentComposer .AvatarButton .AvatarPhoto-image')?.style.backgroundImage;
+    const assignee = document.querySelector('#task_pane_assignee_input .AvatarPhoto-image')?.style.backgroundImage;
     const creator = document.querySelector('.TaskStoryFeed-taskCreationStory .AvatarPhoto-image')?.style.backgroundImage;
-    const assigneeInitials = document.querySelector('#task_pane_assignee_input .AvatarPhoto')?.innerText;
     const userSelfInitials = document.querySelector('.CommentComposer .AvatarButton .AvatarPhoto')?.innerText;
+    const assigneeInitials = document.querySelector('#task_pane_assignee_input .AvatarPhoto')?.innerText;
     const creatorInitials = document.querySelector('.TaskStoryFeed-taskCreationStory .AvatarPhoto')?.innerText;
 
-    // TODO: make this logic configurable. For possible ways to do that:
-    // - https://stackoverflow.com/questions/14594346/create-a-config-or-options-page-for-a-greasemonkey-script
-    // - https://github.com/sizzlemctwizzle/GM_config/wiki
     const editable = (
       (assignee === userSelf) || (creator === userSelf)
     );
-    console.info('==> Configuring task editor.', JSON.stringify({ editable, assigneeInitials, userSelfInitials, creatorInitials }));
-    taskEditor.setAttribute('contenteditable', editable);
+    console.debug('==> Should task be editable?', {
+      editable, user: userSelfInitials, assignee: assigneeInitials, creator: creatorInitials,
+    });
+    return editable;
+  };
+
+  const resetReadOnlyState = async (taskEditor) => {
+    taskEditor ||= document.querySelector('#TaskDescriptionView .ProseMirror');
+    const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
+    if (autoReadOnlyEnabled) {
+      const editable = asanaHelperShouldTaskBeEditable();
+      console.info('==> Task editor editable reset.', { editable });
+      taskEditor.setAttribute('contenteditable', editable);
+    }
 
     const editorToolbar = taskEditor.parentElement.querySelector('.TextEditorFixedToolbar');
     if (!editorToolbar.querySelector('.__readonly')) {
