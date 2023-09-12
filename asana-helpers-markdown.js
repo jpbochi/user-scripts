@@ -1,38 +1,48 @@
 // ==UserScript==
-// @name         Asana Helpers - Markdown, Expand Comments, Theme Switch
+// @name         Asana Helpers - Markdown et al
+// @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.3.2
-// @description  Adds 3 helper buttons, plus paste in markdown format.
+// @version      1.4.0
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
-// @grant        none
 // @run-at       document-idle
 // @require      https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js
 // @icon         https://external-content.duckduckgo.com/i/asana.com.ico
 // @downloadURL  https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
 // @updateURL    https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js
+// @require      https://openuserjs.org/src/libs/sizzle/GM_config.js
+// @grant        GM.registerMenuCommand
+// @grant        GM.unregisterMenuCommand
+// @grant        GM.getValue
+// @grant        GM.setValue
 // ==/UserScript==
 
 (function () {
   'use strict';
 
   const buttonDivId = '__helpers_div__';
+  let autoReadOnlyMenuId = null;
 
-  const button = (content, onClick, title) => {
+  const buildButton = (content, onClick, title, ...classes) => {
     var btn = document.createElement('button');
     btn.innerHTML = content;
+    btn.classList.add(
+      'ThemeableIconButtonPresentation', 'ThemeableIconButtonPresentation--medium', 'ThemeableIconButtonPresentation--isEnabled',
+      'SubtleIconButton', 'SubtleIconButton--standardTheme',
+      ...[classes].flat()
+    );
+    btn.style.setProperty('border-radius', '50%');
+
     btn.setAttribute('title', title || '');
     btn.onclick = onClick;
     btn.onauxclick = onClick;
     return btn;
   };
 
-  const separator = () => {
+  const buildSeparator = (klass) => {
     var sep = document.createElement('div');
-    sep.innerHTML = '&nbsp;&nbsp;';
-    sep.style.setProperty('display', 'inline-block');
-    sep.style.setProperty('opacity', '0.5');
-    sep.style.setProperty('margin', '0 4px');
+    if (klass) sep.classList.add(klass);
+    sep.style.setProperty('margin', '4px');
     return sep;
   };
 
@@ -52,30 +62,45 @@
     button.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 250, iterations: 1 });
   };
 
-  window.addEventListener('load', () => {
-    var cssObj = {
+  const setupButtons = () => {
+    const preexisting = document.getElementById(buttonDivId);
+    if (preexisting) return;
+
+    const buttonDiv = document.createElement('div');
+    buttonDiv.id = buttonDivId;
+    buttonDiv.classList.add('OmnibuttonCorangeSidebarButton', 'ThemeableCardPresentation');
+    setButtonsTheme(buttonDiv);
+    Object.entries({
       position: 'absolute',
       top: '0.44rem',
       left: '12rem',
-      padding: '0.52rem 0.75rem',
-      'border-radius': '999px',
       'z-index': 50, // Setting to 50 just in case there are other elements with z-index 1
-      fontSize: '1rem',
-    };
-    const buttonDiv = document.createElement('div');
-    buttonDiv.id = buttonDivId;
-    setButtonsTheme(buttonDiv);
-    Object.keys(cssObj).forEach((key) => {
-      buttonDiv.style[key] = cssObj[key];
-    });
+    }).forEach(([prop, value]) => { buttonDiv.style.setProperty(prop, value); });
 
-    buttonDiv.appendChild(button('\u262F', switchTheme, 'Switch dark/light themes.'));
-    buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u2195', showAllComments, 'Expand all comments.'));
-    buttonDiv.appendChild(separator());
-    buttonDiv.appendChild(button('\u29C9', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.'));
-
+    buttonDiv.appendChild(buildButton(
+      '\u262F', switchTheme, 'Switch dark/light themes.',
+      '__theme', 'OmnibuttonCorangeSidebarButton-iconContainer',
+    ));
+    buttonDiv.appendChild(buildButton(
+      '\u2195', showAllComments, 'Expand all comments.',
+      '__expand', 'OmnibuttonCorangeSidebarButton-iconContainer',
+    ));
+    buttonDiv.appendChild(buildButton(
+      '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+      '__md_link', 'OmnibuttonCorangeSidebarButton-iconContainer',
+    ));
     document.body.appendChild(buttonDiv);
+
+    waitForEditorThenConfigureIt();
+    window.removeEventListener('focus', setupButtons);
+  };
+
+  window.addEventListener('load', setupButtons);
+  window.addEventListener('pageshow', setupButtons);
+  window.addEventListener('focus', setupButtons);
+  window.navigation.addEventListener('navigate', () => {
+    console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
+    setTimeout(waitForEditorThenConfigureIt, 99);
   });
 
   // Handle Markdown paste. If the content it already text/html it is pasted as it to allow
@@ -115,10 +140,8 @@
 
   // Find the parent editor associated with this element
   function getEditor(element) {
-    var isEditor = false;
-
-    var iterator = element.classList.values();
-
+    let isEditor = false;
+    const iterator = element.classList.values();
     for (const cls of iterator) {
       if (cls.startsWith('ProsemirrorEditor')) {
         isEditor = true;
@@ -127,42 +150,49 @@
     }
 
     if (isEditor) {
-      var editor = element;
+      let editor = element;
       while (editor && !editor.classList.contains('ProsemirrorEditor')) {
         editor = editor.parentElement;
       }
-
       return editor;
     }
-
     return null;
   }
 
-  const waitForSuccessNotification = () =>
-    new Promise((resolve, _reject) => {
-      const observer = new MutationObserver((mutations) => {
-        const addedNodes = getAddedNodes(mutations);
+  const waitForAddedNode = (rootElement, targetSelector, timeoutMs) => {
+    const preexisting = rootElement.querySelector(targetSelector);
+    if (preexisting) return Promise.resolve(preexisting);
 
-        const [notification] = queryAll(addedNodes, '.ToastNotificationContent');
-        if (notification) {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const observer = new MutationObserver((mutations) => {
+        if ((Date.now() - start) > timeoutMs) {
+          console.debug(`=>> Timed out waiting for '${targetSelector}'.`);
           observer.disconnect();
-          console.debug('=>> Found notification.', { notification });
-          return resolve(notification);
+          return reject('Observer wait timeout.');
         }
-        console.debug('=>> Mutation, but notification?', { mutations });
+
+        const [target] = queryAll(getAddedNodes(mutations), targetSelector);
+        if (target) {
+          console.debug(`=>> Found '${targetSelector}'.`, { target });
+          observer.disconnect();
+          return resolve(target);
+        }
+        console.debug(`=>> Still waiting for '${targetSelector}'...`);
       });
 
-      const notificationsDiv = document.querySelector('.ToastManager');
-      console.debug('=>> Observing…', notificationsDiv);
-      observer.observe(notificationsDiv, { subtree: true, childList: true });
+      console.debug('=>> Observing…', rootElement);
+      observer.observe(rootElement, { subtree: true, childList: true });
     });
+  };
 
   const getCurrentTaskUrlFromCopyLinkButton = async () => {
-    const observerWaiting = waitForSuccessNotification();
+    const observerWaitingForSuccessNotification =
+      waitForAddedNode(document.querySelector('.ToastManager'), '.ToastNotificationContent', 5000);
     document.querySelector('.TaskPaneToolbar-copyLinkButton,.ConversationToolbar-copyLinkButton').click();
 
     console.info('=>> Waiting for copied link…');
-    await observerWaiting;
+    await observerWaitingForSuccessNotification;
     console.info('=>> Reading copied link…');
     const href = await navigator.clipboard.readText();
     console.debug('=>> Read:', { href }); // TODO: should we verify that the href is actually an URL pointing to app.asana.com?
@@ -191,14 +221,121 @@
     if (ev.metaKey || ev.ctrlKey || ev.altKey || ev.button === 1) {
       // meta for MacOS, ctrl for Windows, middle click, or alt for good measure
       console.info('=>> Opening tab…', { href });
-      return window.open(href, '_blank').focus();
+      animateButton(ev.srcElement);
+      return window.open(href, '_blank', { noopener: true, noreferrer: true }).focus();
     }
 
     var title = document.querySelector('.TaskPaneToolbarAnimation-title,.ConversationTitleAndContext-title').innerText;
     var markdown = `[${title}](${href})`;
-    console.info('=>> Pasting…', markdown);
+    console.info('=>> Pasting…', { markdown });
     await navigator.clipboard.writeText(markdown);
+    animateButton(ev.srcElement);
+  };
 
+  const refreshReadOnlyState = (taskEditor) => {
+    taskEditor ||= document.querySelector('#TaskDescriptionView .ProseMirror');
+
+    // '\u{1F4DD}' = 📝; '\u{1F4D6}' = 📖
+    const editable = taskEditor.getAttribute('contenteditable') === 'true';
+    const icon = editable ? '\u{1F4DD}' : '\u{1F4D6}';
+
+    Array.from(
+      document.querySelectorAll(`#${buttonDivId} .__readonly, .TextEditorFixedToolbar .__readonly`)
+    ).forEach(button => {
+      button.innerHTML = icon;
+      button.classList.toggle('SubtleIconToggleButton--isPressed', !editable);
+      button.classList.toggle('SubtleIconToggleButton--isNotPressed', editable);
+    });
+  };
+
+  const updateMenuCommands = async () => {
+    const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
+    console.info('=>> Config loaded.', { autoReadOnlyEnabled });
+
+    if (autoReadOnlyMenuId) { await GM.unregisterMenuCommand(autoReadOnlyMenuId); }
+
+    const menuText = autoReadOnlyEnabled ? 'Disable auto read-only!' : 'Enable auto read-only!';
+    autoReadOnlyMenuId = await GM.registerMenuCommand(menuText, async () => {
+      const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
+      await GM.setValue('autoReadOnlyEnabled', !autoReadOnlyEnabled);
+      await updateMenuCommands();
+
+      if (!autoReadOnlyEnabled) { resetReadOnlyState(); }
+    });
+  };
+
+  const waitForEditorThenConfigureIt = async () => {
+    updateMenuCommands();
+
+    waitForAddedNode(document, '.TaskPane, .ConversationPane', 9000).then(pane => {
+      if (!pane.querySelector('.__md_link')) pane.querySelector('.TaskPaneToolbar-copyLinkButton, .ConversationToolbar-copyLinkButton')?.after(
+        buildButton(
+          '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+          '__md_link', 'TaskPaneToolbar-button',
+        ),
+      );
+      if (!pane.querySelector('.__expand')) pane.querySelector('.FollowersBar')?.prepend(
+        buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
+      );
+    });
+    // TODO: alternative place: '.TaskStoryFeed .TaskStoryFeed-expandLink.PrimaryLinkButton'
+    waitForAddedNode(document, '.TaskStoryFeed .TaskStoryFeed-dropdownButton', 9000).then(feedDropdown => {
+      if (!feedDropdown.parentElement.querySelector('.__expand')) {
+        feedDropdown.after(
+          buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
+        );
+      };
+    });
+
+    const taskEditor = await waitForAddedNode(document, '#TaskDescriptionView .ProseMirror', 9000);
+    setTimeout(() => resetReadOnlyState(taskEditor), 200);
+  }
+
+  const asanaHelperShouldTaskBeEditable = () => {
+    const userSelf = document.querySelector('.CommentComposer .AvatarButton .AvatarPhoto-image')?.style.backgroundImage;
+    const assignee = document.querySelector('#task_pane_assignee_input .AvatarPhoto-image')?.style.backgroundImage;
+    const creator = document.querySelector('.TaskStoryFeed-taskCreationStory .AvatarPhoto-image')?.style.backgroundImage;
+    const userSelfInitials = document.querySelector('.CommentComposer .AvatarButton .AvatarPhoto')?.innerText;
+    const assigneeInitials = document.querySelector('#task_pane_assignee_input .AvatarPhoto')?.innerText;
+    const creatorInitials = document.querySelector('.TaskStoryFeed-taskCreationStory .AvatarPhoto')?.innerText;
+
+    const editable = (
+      (assignee === userSelf) || (creator === userSelf)
+    );
+    console.debug('==> Should task be editable?', {
+      editable, user: userSelfInitials, assignee: assigneeInitials, creator: creatorInitials,
+    });
+    return editable;
+  };
+
+  const resetReadOnlyState = async (taskEditor) => {
+    taskEditor ||= document.querySelector('#TaskDescriptionView .ProseMirror');
+    const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
+    if (autoReadOnlyEnabled) {
+      const editable = asanaHelperShouldTaskBeEditable();
+      console.info('==> Task editor editable reset.', { editable });
+      taskEditor.setAttribute('contenteditable', editable);
+    }
+
+    const editorToolbar = taskEditor.parentElement.querySelector('.TextEditorFixedToolbar');
+    if (!editorToolbar.querySelector('.__readonly')) {
+      editorToolbar.appendChild(buildSeparator('TextEditorFixedToolbar-divider'));
+      editorToolbar.appendChild(buildButton(
+        '?', toggleReadOnly, 'Toggles task\'s contenteditable on/off.',
+        '__readonly',
+        'SubtleIconToggleButton', 'SubtleIconToggleButton--standardTheme', 'SubtleIconToggleButton--isNotPressed',
+      ));
+    }
+
+    refreshReadOnlyState(taskEditor);
+  };
+
+  const toggleReadOnly = (ev) => {
+    const taskEditor = document.querySelector('#TaskDescriptionView .ProseMirror');
+    const editable = taskEditor.getAttribute('contenteditable') === 'true';
+    taskEditor.setAttribute('contenteditable', !editable);
+
+    refreshReadOnlyState(taskEditor);
     animateButton(ev.srcElement);
   };
 

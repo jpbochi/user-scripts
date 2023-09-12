@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Only Single Comments
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.1.2
+// @version      1.2.0
 // @description  On GitHub PR inline comments, changes the default button from "Start a review" to "Add single comment"
 // @author       JP Bochi
-// @match        *://github.com/*/*/pull/*
+// @match        *://github.com/**
 // @grant        none
 // @run-at       document-idle
 // @icon         https://external-content.duckduckgo.com/i/github.com.ico
@@ -49,6 +49,9 @@
   };
 
   const observe = (mutations, _observer) => {
+    const pullReqHeader = document.getElementById('partial-discussion-header');
+    if (!pullReqHeader) { return console.debug('=>> Not a PR page, ignoring…'); }
+
     const addedNodes = Array.from(mutations)
       .filter(mutation => (mutation.type === 'childList'))
       .map(mutation => mutation.addedNodes)
@@ -60,22 +63,79 @@
     addedNodes
       .flatMap(added => Array.from(added.querySelectorAll('form.js-inline-comment-form')))
       .forEach(defaultToSingleComment);
+
+    addCopyMDLinkButton(pullReqHeader);
   };
 
-  const fixAll = () => {
-    const targetNode = document.getElementById('js-repo-pjax-container');
+  const buildButton = (content, onClick, title, ...classes) => {
+    var btn = document.createElement('button');
+    btn.innerHTML = content;
+    btn.classList.add(
+      'Button--secondary', 'Button--small', 'Button',
+      ...[classes].flat()
+    );
+    btn.style.setProperty('border-radius', '50%');
 
-    Array.from(targetNode.querySelectorAll('form.js-inline-comment-form'))
+    btn.setAttribute('title', title || '');
+    btn.onclick = onClick;
+    btn.onauxclick = onClick;
+    return btn;
+  };
+  const animateButton = (button) => {
+    button.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 250, iterations: 1 });
+  };
+
+  // Get a Markdown link for the current PR formatted as [Achieve Greatness • jpbochi/user-scripts#44](https://github.com/jpbochi/user-scripts/pull/44)
+  const getMDLink = async (ev) => {
+    console.debug('=>> Click:', ev);
+    const href = document.querySelector('meta[property="og:url"]').content;
+    // Object.fromEntries(Array.from(document.querySelectorAll('meta[property]')).map(x => [x.getAttribute('property'), x.content]))
+
+    // '\u00B7' = '·'; '\u2022' = '•'
+    const repoPath = document.querySelector('meta[property="og:title"]').content.split(' ').pop();
+    const title = document.querySelector('h1.gh-header-title').innerText.replace(/#([0-9]+)$/, `\u2022 ${repoPath}#$1`);
+
+    var markdown = `[${title}](${href})`;
+    console.info('=>> Pasting…', { markdown });
+    await navigator.clipboard.writeText(markdown);
+    animateButton(ev.srcElement);
+  };
+
+  const addCopyMDLinkButton = (headerContainer) => {
+    const headerActions = (headerContainer || document).querySelector('.gh-header-actions');
+
+    if (headerActions && !headerActions.querySelector('.__md_link')) {
+      // '\u{1F517}' = '🔗'; '\u{26AD}' = '⚭'
+      headerActions.appendChild(buildButton(
+        '\u{1F517}', getMDLink, 'Copy PR link as Markdown', '__md_link',
+      ));
+    }
+  };
+
+  const setup = () => {
+    const mainContainer = document.getElementById('js-repo-pjax-container');
+    if (!mainContainer) {
+      return;
+    }
+    if (mainContainer.classList.contains('__observed')) {
+      return console.debug('=>> Already observing container…');
+    }
+    // Fix any pre-existing forms
+    Array.from(mainContainer.querySelectorAll('form.js-inline-comment-form'))
       .forEach(defaultToSingleComment);
-  }
 
-  // Fix any pre-existing forms
-  fixAll();
+    console.debug('=>> Observing PR container for new forms…', { mainContainer });
+    new MutationObserver(observe).observe(
+      mainContainer,
+      { attributes: false, childList: true, subtree: true }
+    );
+    mainContainer.classList.add('__observed');
 
-  // Watch for new forms
-  const config = { attributes: false, childList: true, subtree: true };
-  const targetNode = document.getElementById('js-repo-pjax-container');
-  new MutationObserver(observe).observe(targetNode, config);
+    addCopyMDLinkButton(mainContainer);
+  };
 
-  window.defaultToSingleComment = fixAll;
+  window.addEventListener('load', setup);
+  window.addEventListener('pageshow', setup);
+  window.addEventListener('focus', setup);
+  window.navigation.addEventListener('navigate', setup);
 })();
