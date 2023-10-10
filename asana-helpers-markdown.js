@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.4.1
+// @version      1.4.2
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -111,29 +111,26 @@
     breaks: true,
   });
 
-  document.addEventListener(
-    'paste',
-    (event) => {
+  document.addEventListener('paste', (event) => {
       var editor = getEditor(event.target.parentElement);
 
-      if (editor && !event.isMarkdownFormatEvent && !event.clipboardData.types.contains('text/html')) {
-        event.stopImmediatePropagation();
-        event.stopPropagation();
-        event.preventDefault();
-
-        var pastedText = event.clipboardData.getData('text/plain');
-
-        var parsedMarkdown = marked.parse(pastedText);
-
-        var clipboardData = new DataTransfer();
-        var clipboardEvent = new ClipboardEvent('paste', { clipboardData: clipboardData });
-        clipboardEvent.clipboardData.setData('text/html', parsedMarkdown);
-        clipboardEvent.isMarkdownFormatEvent = true;
-
-        editor.dispatchEvent(clipboardEvent);
-
-        return false;
+      if (!editor || event.isMarkdownFormatEvent || !event.clipboardData.types.contains('text/plain')) {
+        return;
       }
+
+      event.stopImmediatePropagation();
+      event.stopPropagation();
+      event.preventDefault();
+
+      var pastedText = event.clipboardData.getData('text/plain');
+      var parsedMarkdown = marked.parse(pastedText);
+
+      var clipboardData = new DataTransfer();
+      var clipboardEvent = new ClipboardEvent('paste', { clipboardData });
+      clipboardEvent.clipboardData.setData('text/html', parsedMarkdown);
+      clipboardEvent.isMarkdownFormatEvent = true;
+
+      editor.dispatchEvent(clipboardEvent);
     },
     { capture: true }
   );
