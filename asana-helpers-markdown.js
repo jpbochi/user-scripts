@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.4.2
+// @version      1.4.3
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -114,7 +114,8 @@
   document.addEventListener('paste', (event) => {
       var editor = getEditor(event.target.parentElement);
 
-      if (!editor || event.isMarkdownFormatEvent || !event.clipboardData.types.contains('text/plain')) {
+      const { types } = event.clipboardData;
+      if (!editor || event.isMarkdownFormatEvent || !types.contains('text/plain') || types.contains('text/html')) {
         return;
       }
 
