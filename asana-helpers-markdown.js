@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.4.0
+// @version      1.4.1
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -326,6 +326,14 @@
         'SubtleIconToggleButton', 'SubtleIconToggleButton--standardTheme', 'SubtleIconToggleButton--isNotPressed',
       ));
     }
+
+    // Prevent double new tabs, when middle clicking on a link, on a non-editable editor.
+    taskEditor.onmouseup = (ev) => {
+      const editable = taskEditor.getAttribute('contenteditable') === 'true';
+      if (!editable) {
+        ev.stopPropagation();
+      }
+    };
 
     refreshReadOnlyState(taskEditor);
   };
