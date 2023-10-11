@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.4.3
+// @version      1.4.4
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -98,10 +98,14 @@
   window.addEventListener('load', setupButtons);
   window.addEventListener('pageshow', setupButtons);
   window.addEventListener('focus', setupButtons);
-  window.navigation.addEventListener('navigate', () => {
-    console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
-    setTimeout(waitForEditorThenConfigureIt, 99);
-  });
+
+  // window.navigation is not supported by all browsers (https://caniuse.com/mdn-api_window_navigation)
+  if (window.navigation) {
+    window.navigation.addEventListener('navigate', () => {
+      console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
+      setTimeout(waitForEditorThenConfigureIt, 99);
+    });
+  }
 
   // Handle Markdown paste. If the content it already text/html it is pasted as it to allow
   // copy/paste from other tasks. On macOS you can paste as text using Cmd+Alt+Shift+V.
