@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.4.4
+// @version      1.4.5
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -91,7 +91,7 @@
     ));
     document.body.appendChild(buttonDiv);
 
-    waitForEditorThenConfigureIt();
+    waitForEditorThenConfigureIt().catch(err => console.error(err));
     window.removeEventListener('focus', setupButtons);
   };
 
@@ -103,7 +103,7 @@
   if (window.navigation) {
     window.navigation.addEventListener('navigate', () => {
       console.debug('=>> navigate event. Refreshing readonly button state in 99ms…');
-      setTimeout(waitForEditorThenConfigureIt, 99);
+      setTimeout(() => waitForEditorThenConfigureIt().catch(err => console.error(err)), 99);
     });
   }
 
@@ -235,7 +235,7 @@
   };
 
   const refreshReadOnlyState = (taskEditor) => {
-    taskEditor ||= document.querySelector('#TaskDescriptionView .ProseMirror');
+    taskEditor ||= document.querySelector('#TaskDescription .ProseMirror');
 
     // '\u{1F4DD}' = 📝; '\u{1F4D6}' = 📖
     const editable = taskEditor.getAttribute('contenteditable') === 'true';
@@ -289,8 +289,8 @@
       };
     });
 
-    const taskEditor = await waitForAddedNode(document, '#TaskDescriptionView .ProseMirror', 9000);
-    setTimeout(() => resetReadOnlyState(taskEditor), 200);
+    const taskEditor = await waitForAddedNode(document, '#TaskDescription .ProseMirror', 9000);
+    setTimeout(() => resetReadOnlyState(taskEditor).catch(err => console.error(err)), 200);
   }
 
   const asanaHelperShouldTaskBeEditable = () => {
@@ -311,7 +311,7 @@
   };
 
   const resetReadOnlyState = async (taskEditor) => {
-    taskEditor ||= document.querySelector('#TaskDescriptionView .ProseMirror');
+    taskEditor ||= document.querySelector('#TaskDescription .ProseMirror');
     const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
     if (autoReadOnlyEnabled) {
       const editable = asanaHelperShouldTaskBeEditable();
@@ -341,7 +341,7 @@
   };
 
   const toggleReadOnly = (ev) => {
-    const taskEditor = document.querySelector('#TaskDescriptionView .ProseMirror');
+    const taskEditor = document.querySelector('#TaskDescription .ProseMirror');
     const editable = taskEditor.getAttribute('contenteditable') === 'true';
     taskEditor.setAttribute('contenteditable', !editable);
 
