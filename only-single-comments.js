@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Only Single Comments
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.2.0
+// @version      1.2.1
 // @description  On GitHub PR inline comments, changes the default button from "Start a review" to "Add single comment"
 // @author       JP Bochi
 // @match        *://github.com/**
