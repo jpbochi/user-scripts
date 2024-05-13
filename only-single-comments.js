@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Only Single Comments
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.2.0
+// @version      1.2.1
 // @description  On GitHub PR inline comments, changes the default button from "Start a review" to "Add single comment"
 // @author       JP Bochi
 // @match        *://github.com/**
@@ -88,7 +88,13 @@
   // Get a Markdown link for the current PR formatted as [Achieve Greatness • jpbochi/user-scripts#44](https://github.com/jpbochi/user-scripts/pull/44)
   const getMDLink = async (ev) => {
     console.debug('=>> Click:', ev);
-    const href = document.querySelector('meta[property="og:url"]').content;
+
+    const href =
+      document.querySelector('link[rel="alternate"][type="text/x-diff"]')?.href?.replace(/[.]diff$/, '')
+      || document.querySelector('.tabnav-tabs[aria-label="Pull request tabs"] .tabnav-tab:first-of-type')?.href
+      || document.querySelector('#repo-content-turbo-frame')?.src
+      || document.querySelector('meta[property="og:url"]')?.content
+      || document.URL;
     // Object.fromEntries(Array.from(document.querySelectorAll('meta[property]')).map(x => [x.getAttribute('property'), x.content]))
 
     // '\u00B7' = '·'; '\u2022' = '•'
