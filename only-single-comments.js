@@ -98,8 +98,12 @@
     // Object.fromEntries(Array.from(document.querySelectorAll('meta[property]')).map(x => [x.getAttribute('property'), x.content]))
 
     // '\u00B7' = '·'; '\u2022' = '•'
-    const repoPath = document.querySelector('meta[property="og:title"]').content.split(' ').pop();
-    const title = document.querySelector('h1.gh-header-title').innerText.replace(/#([0-9]+)$/, `\u2022 ${repoPath}#$1`);
+    const repoUrlPath = document.querySelector('#code-tab')?.pathname
+      || (
+        document.querySelector('head title')?.innerText
+        || document.querySelector('meta[property="og:title"]')?.content
+      )?.split(' ')?.pop();
+    const title = document.querySelector('h1.gh-header-title').innerText.replace(/#([0-9]+)$/, `\u2022 ${repoUrlPath}#$1`);
 
     var markdown = `[${title}](${href})`;
     console.info('=>> Pasting…', { markdown });
