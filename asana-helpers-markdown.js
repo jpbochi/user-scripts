@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.5.0
+// @version      1.5.1
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -39,10 +39,12 @@
     return btn;
   };
 
-  const buildSeparator = (klass) => {
+  const buildSeparator = (klass, margin) => {
     var sep = document.createElement('div');
-    if (klass) sep.classList.add(klass);
-    sep.style.setProperty('margin', '4px');
+    klass ||= 'TextEditorFixedToolbar-divider';
+    margin ||= '8px';
+    sep.classList.add(klass);
+    sep.style.setProperty('margin', margin);
     return sep;
   };
 
@@ -76,18 +78,22 @@
       'z-index': 50, // Setting to 50 just in case there are other elements with z-index 1
     }).forEach(([prop, value]) => { buttonDiv.style.setProperty(prop, value); });
 
-    buttonDiv.appendChild(buildButton(
-      '\u262F', switchTheme, 'Switch dark/light themes.',
-      '__theme', 'OmnibuttonButtonCard-iconContainer', '___TaskPaneToolbar-button'
-    ));
-    buttonDiv.appendChild(buildButton(
-      '\u2195', showAllComments, 'Expand all comments.',
-      '__expand', 'OmnibuttonButtonCard-iconContainer', '___TaskPaneToolbar-button'
-    ));
-    buttonDiv.appendChild(buildButton(
-      '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
-      '__md_link', 'OmnibuttonButtonCard-iconContainer', '___TaskPaneToolbar-button'
-    ));
+    buttonDiv.append(
+      buildButton(
+        '\u262F', switchTheme, 'Switch dark/light themes.',
+        '__theme', 'OmnibuttonButtonCard-iconContainer',
+      ),
+      buildSeparator('__none', '2px'),
+      buildButton(
+        '\u2195', showAllComments, 'Expand all comments.',
+        '__expand', 'OmnibuttonButtonCard-iconContainer',
+      ),
+      buildSeparator('__none', '2px'),
+      buildButton(
+        '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+        '__md_link', 'OmnibuttonButtonCard-iconContainer',
+      )
+    );
     document.body.appendChild(buttonDiv);
 
     waitForEditorThenConfigureIt().catch(err => console.error(err));
@@ -251,7 +257,7 @@
 
   const updateMenuCommands = async () => {
     const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
-    console.info('=>> Config loaded.', { autoReadOnlyEnabled });
+    console.info('=>> autoReadOnlyEnabled config loaded.', { autoReadOnlyEnabled });
 
     if (autoReadOnlyMenuId) { await GM.unregisterMenuCommand(autoReadOnlyMenuId); }
 
@@ -268,20 +274,24 @@
   const waitForEditorThenConfigureIt = async () => {
     updateMenuCommands();
 
+
     waitForAddedNode(document, '.TaskPane, .ConversationPane', 9000).then(pane => {
       if (!pane.querySelector('.__md_link')) pane.querySelector('.TaskPaneToolbar-copyLinkButton, .ConversationToolbar-copyLinkButton')?.after(
         buildButton(
           '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
+          // NOTE: TaskPaneToolbar-button adds 'margin-left: 8px;'
           '__md_link', 'TaskPaneToolbar-button'
         ),
       );
       if (!pane.querySelector('.__expand')) pane.querySelector('.FollowersBar')?.prepend(
-        buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand', 'TaskPaneToolbar-button'),
+        buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
+        buildSeparator(),
       );
     });
     waitForAddedNode(document, '.TaskStoryFeed .TabList', 9000).then(tabList => {
       if (!tabList.querySelector('.__expand')) {
-        tabList.appendChild(
+        tabList.append(
+          buildSeparator('__none', '12px'),
           buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
         );
       };
@@ -319,7 +329,6 @@
 
     const editorToolbar = taskEditor.parentElement.querySelector('.TextEditorFixedToolbar');
     if (!editorToolbar.querySelector('.__readonly')) {
-      editorToolbar.appendChild(buildSeparator('TextEditorFixedToolbar-divider'));
       editorToolbar.appendChild(buildButton(
         '?', toggleReadOnly, 'Toggles task\'s contenteditable on/off.',
         '__readonly',
