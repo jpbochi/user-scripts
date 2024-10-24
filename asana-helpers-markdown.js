@@ -2,7 +2,7 @@
 // @name         Asana Helpers - Markdown et al
 // @description  Adds buttons (Markdown, Expand Comments, Theme Switch, Read-Only Mode), plus paste in markdown format.
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      1.4.5
+// @version      1.5.0
 // @author       Nick Goossens, JP Bochi, Karl K
 // @match        *://app.asana.com/*
 // @run-at       document-idle
@@ -27,8 +27,8 @@
     var btn = document.createElement('button');
     btn.innerHTML = content;
     btn.classList.add(
-      'ThemeableIconButtonPresentation', 'ThemeableIconButtonPresentation--medium', 'ThemeableIconButtonPresentation--isEnabled',
-      'SubtleIconButton', 'SubtleIconButton--standardTheme',
+      'IconButtonThemeablePresentation', 'IconButtonThemeablePresentation--medium', 'IconButtonThemeablePresentation--isEnabled',
+      'CountAvatar', 'CountAvatar--small', 'CountAvatar--standardTheme',
       ...[classes].flat()
     );
     btn.style.setProperty('border-radius', '50%');
@@ -68,8 +68,7 @@
 
     const buttonDiv = document.createElement('div');
     buttonDiv.id = buttonDivId;
-    buttonDiv.classList.add('OmnibuttonCorangeSidebarButton', 'ThemeableCardPresentation');
-    setButtonsTheme(buttonDiv);
+    buttonDiv.classList.add('OmnibuttonButtonCard', 'ThemeableCardPresentation');
     Object.entries({
       position: 'absolute',
       top: '0.44rem',
@@ -79,15 +78,15 @@
 
     buttonDiv.appendChild(buildButton(
       '\u262F', switchTheme, 'Switch dark/light themes.',
-      '__theme', 'OmnibuttonCorangeSidebarButton-iconContainer',
+      '__theme', 'OmnibuttonButtonCard-iconContainer', '___TaskPaneToolbar-button'
     ));
     buttonDiv.appendChild(buildButton(
       '\u2195', showAllComments, 'Expand all comments.',
-      '__expand', 'OmnibuttonCorangeSidebarButton-iconContainer',
+      '__expand', 'OmnibuttonButtonCard-iconContainer', '___TaskPaneToolbar-button'
     ));
     buttonDiv.appendChild(buildButton(
       '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
-      '__md_link', 'OmnibuttonCorangeSidebarButton-iconContainer',
+      '__md_link', 'OmnibuttonButtonCard-iconContainer', '___TaskPaneToolbar-button'
     ));
     document.body.appendChild(buttonDiv);
 
@@ -273,17 +272,16 @@
       if (!pane.querySelector('.__md_link')) pane.querySelector('.TaskPaneToolbar-copyLinkButton, .ConversationToolbar-copyLinkButton')?.after(
         buildButton(
           '\u26AD', getMDLink, 'Copy task/message link as Markdown. With Meta/Ctrl, opens it on a new tab.',
-          '__md_link', 'TaskPaneToolbar-button',
+          '__md_link', 'TaskPaneToolbar-button'
         ),
       );
       if (!pane.querySelector('.__expand')) pane.querySelector('.FollowersBar')?.prepend(
-        buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
+        buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand', 'TaskPaneToolbar-button'),
       );
     });
-    // TODO: alternative place: '.TaskStoryFeed .TaskStoryFeed-expandLink.PrimaryLinkButton'
-    waitForAddedNode(document, '.TaskStoryFeed .TaskStoryFeed-dropdownButton', 9000).then(feedDropdown => {
-      if (!feedDropdown.parentElement.querySelector('.__expand')) {
-        feedDropdown.after(
+    waitForAddedNode(document, '.TaskStoryFeed .TabList', 9000).then(tabList => {
+      if (!tabList.querySelector('.__expand')) {
+        tabList.appendChild(
           buildButton('\u2195', showAllComments, 'Expand all comments.', '__expand'),
         );
       };
@@ -366,21 +364,7 @@
     );
     currentTheme.add(targetTheme);
 
-    setButtonsTheme(document.getElementById(buttonDivId));
     animateButton(ev.srcElement);
-  }
-
-  function setButtonsTheme(buttonDiv) {
-    const currentTheme = document.body.classList;
-    if (currentTheme.contains('DesignTokenThemeSelectors-theme--darkMode') || currentTheme.contains('DesignTokenThemeSelectors-theme--systemDarkMode')) {
-      buttonDiv.style.setProperty('color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('background-color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #565557', 'important');
-    } else {
-      buttonDiv.style.setProperty('color', '#2E2E30', 'important');
-      buttonDiv.style.setProperty('background-color', '#F5F4F3', 'important');
-      buttonDiv.style.setProperty('border', '1px solid #56555720', 'important');
-    }
   }
 
   // Expand all comments and show all their details
