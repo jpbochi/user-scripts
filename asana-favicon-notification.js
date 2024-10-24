@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asana Dynamic Favicon
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      0.1.6
+// @version      0.2.0
 // @description  Displays an orange notification circle (just like Asana Inbox tab does) on the top right of the tab favicon.
 // @author       JP Bochi
 // @match        *://app.asana.com/*
@@ -75,7 +75,7 @@
   const install = () => {
     return waitForSideBar().then((sidebar) => {
       const lookForNotifications = () => {
-        const hasNotifications = !!sidebar.querySelector('.NotificationsIndicator');
+        const hasNotifications = !!sidebar.querySelector('.CompoundNavIcon-outer');
         updateFavicon(hasNotifications);
       };
 
