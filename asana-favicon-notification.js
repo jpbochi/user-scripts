@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asana Dynamic Favicon
 // @namespace    https://github.com/jpbochi/user-scripts
-// @version      0.1.5
+// @version      0.1.6
 // @description  Displays an orange notification circle (just like Asana Inbox tab does) on the top right of the tab favicon.
 // @author       JP Bochi
 // @match        *://app.asana.com/*
@@ -41,13 +41,7 @@
   const didAddOrRemoveNodes = (mutations) => (
     Array.from(mutations)
       .filter(mutation => (mutation.type === 'childList'))
-      .find(mutation => mutation.addedNodes.length || mutation.removedNodes.length)
-  );
-  const queryAll = (nodes, query) => (
-    [
-      ...nodes.filter(node => node.matches && node.matches(query)),
-      ...nodes.flatMap(node => Array.from(node.querySelectorAll ? node.querySelectorAll(query) : [])),
-    ]
+      .find(mutation => mutation.addedNodes?.length || mutation.removedNodes?.length)
   );
 
   const waitForSideBar = () => (new Promise((resolve, reject) => {
@@ -57,22 +51,22 @@
       return resolve(loadedSidebar);
     }
 
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((_mutations) => {
       const sidebar = document.querySelector('#asana_sidebar');
       if (sidebar) {
         observer.disconnect();
-        console.debug('=>> Found sidebar.', { sidebar });
+        console.info('=>> Found sidebar.', { sidebar });
         return resolve(sidebar);
       }
 
       const fullscreen = document.querySelector('#asana_full_page');
       if (fullscreen) {
         observer.disconnect();
-        console.debug('=>> Found fullscreen. No sidebar expected.', { fullscreen });
+        console.info('=>> Found fullscreen. No sidebar expected.', { fullscreen });
         return reject(fullscreen);
       }
 
-      console.warn('=>> Did not find either sidebar or fullscreen.', { addedNodes });
+      console.info('=>> Did not find either sidebar or fullscreen. Waiting...');
     });
 
     observer.observe(document.body, { subtree: true, childList: true });

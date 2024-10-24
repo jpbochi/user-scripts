@@ -257,7 +257,7 @@
 
   const updateMenuCommands = async () => {
     const autoReadOnlyEnabled = await GM.getValue('autoReadOnlyEnabled', false);
-    console.info('=>> Config loaded.', { autoReadOnlyEnabled });
+    console.info('=>> autoReadOnlyEnabled config loaded.', { autoReadOnlyEnabled });
 
     if (autoReadOnlyMenuId) { await GM.unregisterMenuCommand(autoReadOnlyMenuId); }
 
