@@ -17,6 +17,8 @@ To run any of the scripts, you'll need a tool like these:
   - Install URL: `https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-favicon-notification.js`
 - [asana-helpers-markdown.js](./asana-helpers-markdown.js)
   - Install URL: `https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-helpers-markdown.js`
+- [asana-auto-expand-subtasks.js](./asana-auto-expand-subtasks.js)
+  - Install URL: `https://raw.githubusercontent.com/jpbochi/user-scripts/master/asana-auto-expand-subtasks.js`
 
 ## For github.com
 
